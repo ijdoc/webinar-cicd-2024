@@ -73,4 +73,4 @@ with wandb.init(
     print(drift_results)
 
     # Print the drift detection result in a parseable format
-    print(f"::DRIFT_DETECTED::{drift_detected}")
+    print(f"DRIFT_DETECTED={drift_detected}")

@@ -40,7 +40,7 @@ jobs:
           cd drift
           output=$(pipenv run python check_drift.py)
           echo "$output"
-          drift_detected=$(echo "$output" | grep "::DRIFT_DETECTED::" | cut -d'::' -f3)
+          drift_detected=$(echo "$output" | grep "DRIFT_DETECTED=" | cut -d'=' -f2)
           echo "drift_detected=$drift_detected" >> $GITHUB_OUTPUT
 
   retrain:
