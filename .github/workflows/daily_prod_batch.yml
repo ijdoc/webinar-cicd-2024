@@ -43,11 +43,8 @@ jobs:
       - name: ⏬ Checkout repository
         uses: actions/checkout@v2
 
-      - name: Say hi!
+      - name: ⚙️ Train!
         env:
           WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
         run: |
-          pwd
-          ls -all
-          cd train
-          echo "Hello!"
+          python train.py
