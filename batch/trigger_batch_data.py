@@ -69,6 +69,7 @@ def main():
     response = requests.post(url, json=data, headers=headers)
     if response.status_code == 204:
         print("Workflow triggered successfully.")
+        print(response.text)
     else:
         print(f"Failed to trigger workflow: {response.status_code}")
         print(response.text)
