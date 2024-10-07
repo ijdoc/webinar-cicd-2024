@@ -16,7 +16,7 @@ jobs:
   drift_check:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: ⏬ Checkout repository
         uses: actions/checkout@v2
 
       - name: 🐍 Setup python
@@ -28,14 +28,12 @@ jobs:
         run: |
           pip install pipenv
           cd drift
-          pwd
           pipenv sync
 
-      - name: Run Drift Check
+      - name: ⚙️ Run Drift Check
         run: |
           cd drift
-          pwd
-          python check_drift.py
+          pipenv run python check_drift.py
   retrain:
     needs: drift_check
     runs-on: self-hosted
