@@ -59,7 +59,7 @@ with wandb.init(
     )
 
     drift_results = run_drift_check(
-        initial_data, new_data, ["active_power", "temp", "humidity", "pressure"]
+        train_data, prod_data, ["active_power", "temp", "humidity", "pressure"]
     )
 
     if any(drift_results.values()):
