@@ -1,0 +1,26 @@
+name: Data Drift Check
+
+on:
+  # schedule:
+  #   - cron: '0 0 * * *'  # Run every day at midnight
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  drift_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Drift Check
+        run: |
+          python drift_check.py
