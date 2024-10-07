@@ -4,7 +4,7 @@ name: Data Drift Check
 
 on:
   workflow_run: # Trigger after another workflow completes
-    workflows: [Production Data Batching]
+    workflows: ["Production Data Batching"]
     types:
       - completed
 
