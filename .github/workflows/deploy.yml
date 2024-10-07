@@ -3,7 +3,7 @@ name: Deploy to Fly.io
 on:
   push:
     branches:
-      - main  # Adjust if your default branch is different
+      - debug  # Adjust if your default branch is different
 jobs:
   deploy:
     runs-on: ubuntu-latest

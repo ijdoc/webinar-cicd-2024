@@ -43,9 +43,9 @@ def main(args):
 
         # Grab history_days of data, offset by iteration and stride_days (if production)
         if type == "training":
-            offset = iteration * history_days
+            offset = stride_days * iteration
         elif type == "production":
-            offset = (iteration * history_days) + stride_days
+            offset = stride_days * (iteration + 1)
         data = daily_data.iloc[offset : offset + history_days]
 
         print(data.head())
