@@ -1,0 +1,45 @@
+name: Data Drift Check
+description: Checks for drift between train & prod data, and retrains the model when drift is detected
+
+on:
+  # FIXME: We would typically run this every day, but since this is just an example
+  # we will instead emulate executions by running POST requests directly from a script
+  # schedule:
+  #   - cron: '0 0 * * *'  # Run every day at midnight
+  pull_request:
+    branches: main
+  repository_dispatch:  # Allows webhook triggering
+    types: [new_prod_data_batch]
+
+jobs:
+  drift_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10
+
+      - name: Install dependencies
+        run: |
+          cd drift
+          pip install -r requirements.txt
+
+      - name: Run Drift Check
+        run: |
+          cd drift
+          python check_drift.py
+  retrain:
+    needs: drift_check
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Say hi!
+        run: |
+          cd train
+          echo "Hello!"
