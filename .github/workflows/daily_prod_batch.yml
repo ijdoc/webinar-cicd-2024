@@ -47,5 +47,7 @@ jobs:
         env:
           WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
         run: |
+          pwd
+          ls -all
           cd train
           echo "Hello!"
