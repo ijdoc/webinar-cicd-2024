@@ -15,10 +15,10 @@ jobs:
       drift_detected: ${{ steps.drift_check.outputs.drift_detected }}
     steps:
       - name: ⏬ Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 🐍 Setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -35,9 +35,13 @@ jobs:
         run: |
           cd drift
           output=$(pipenv run python check_drift.py)
-          echo "$output"
           drift_detected=$(echo "$output" | grep "DRIFT_DETECTED=" | cut -d'=' -f2)
           echo "drift_detected=$drift_detected" >> $GITHUB_OUTPUT
+          if [ "$drift_detected" == "True" ]; then
+            echo "{Drift detected!}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "{No drift detected}" >> $GITHUB_STEP_SUMMARY
+          fi
 
   retrain:
     needs: drift_check
@@ -45,7 +49,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: ⏬ Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ⚙️ Train!
         env:
