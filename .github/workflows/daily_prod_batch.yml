@@ -1,13 +1,14 @@
+# Checks for drift between train & prod data, and
+# retrains the model when drift is detected
 name: Data Drift Check
-description: Checks for drift between train & prod data, and retrains the model when drift is detected
 
 on:
   # FIXME: We would typically run this every day, but since this is just an example
   # we will instead emulate executions by running POST requests directly from a script
   # schedule:
   #   - cron: '0 0 * * *'  # Run every day at midnight
-  pull_request:
-    branches: main
+  push: # run on push to debugging branch
+    branches: e2e_mock  # Run on push to e2e_mock branch
   repository_dispatch:  # Allows webhook triggering
     types: [new_prod_data_batch]
 
@@ -25,12 +26,15 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pip install pipenv
           cd drift
-          pip install -r requirements.txt
+          pwd
+          pipenv sync
 
       - name: Run Drift Check
         run: |
           cd drift
+          pwd
           python check_drift.py
   retrain:
     needs: drift_check
