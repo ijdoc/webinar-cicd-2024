@@ -14,8 +14,8 @@ with wandb.init(
         "num_heads": 8,  # Number of attention heads
         "num_layers": 3,  # Number of encoder layers
         "dropout_prob": 0.1,  # Dropout probability
-        "learning_rate": 0.001,  # Learning rate
-        "epochs": 10,  # Number of training epochs
+        "learning_rate": 0.00005,  # Learning rate
+        "epochs": 100,  # Number of training epochs
         "src_len": 30,  # Number of past time steps to use (history)
         "tgt_len": 7,  # Number of future time steps to predict
         "batch_size": 32,  # Batch size
