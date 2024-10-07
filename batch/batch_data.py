@@ -11,14 +11,14 @@ def main(args):
         project="wandb-webinar-cicd-2024",
         job_type="batch-data",
         config={
-            "type": args.data_type,  # The type of dataset to batch (training or production)
+            "type": args.type,  # The type of dataset to batch (training or production)
             "period_iteration": args.period_iteration,  # The iteration of the dataset to batch
             "history_days": args.history_days,  # The total length of the history batch in days
             "stride_days": args.stride_days,  # The number of days to stride between iterations
         },
     ) as run:
 
-        data_type = run.config.type
+        type = run.config.type
         period_iteration = run.config.period_iteration
         history_days = run.config.history_days
         stride_days = run.config.stride_days
@@ -42,9 +42,9 @@ def main(args):
         daily_data = data.resample("D").mean()
 
         # Grab history_days of data, offset by period_iteration and stride_days (if production)
-        if data_type == "training":
+        if type == "training":
             offset = period_iteration * history_days
-        elif data_type == "production":
+        elif type == "production":
             offset = (period_iteration * history_days) + stride_days
         data = daily_data.iloc[offset : offset + history_days]
 
@@ -59,10 +59,10 @@ def main(args):
         )
 
         # Log the dataset
-        artifact = wandb.Artifact(f"{data_type}_data", type="dataset")
-        artifact.add(wandb.Table(dataframe=data), f"{data_type}_data")
+        artifact = wandb.Artifact(f"{type}_data", type="dataset")
+        artifact.add(wandb.Table(dataframe=data), f"{type}_data")
         artifact.description = (
-            f"Sampled {data_type} data for iteration {period_iteration}. "
+            f"Sampled {type} data for iteration {period_iteration}. "
             f"Iterations simulate data collection over the previous {history_days} "
             f"days, with a stride of {stride_days} days"
         )
