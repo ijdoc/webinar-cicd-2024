@@ -1,0 +1,45 @@
+# Simulates a workflow that would run periodically to batch and log production data
+name: Production Data Batching
+
+on:
+  # FIXME: We would typically run this on a schedule, but since this is just an example,
+  # we will instead emulate executions by running POST requests directly from a script
+  # schedule:
+  #   - cron: '0 0 * * *'  # Run every day at midnight
+  repository_dispatch:  # Allow triggering from a POST request
+    types: [prod_data_batch]
+  push: # run on push to specific branches (use for debugging)
+    branches: e2e_mock  # Run on push to e2e_mock branch
+
+jobs:
+  batch_data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⏬ Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🐍 Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: 📦 Install dependencies
+        run: |
+          pip install pipenv
+          cd batch
+          pipenv sync
+
+      - name: ⚙️ Log Production Data
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+          # TYPE: ${{ github.event.client_payload.type }}
+          ITERATION: ${{ github.event.client_payload.iteration }}
+          HISTORY_DAYS: ${{ github.event.client_payload.history_days }}
+          STRIDE_DAYS: ${{ github.event.client_payload.stride_days }}
+        run: |
+          cd batch
+          pipenv run python batch_data.py \
+            --type=production \
+            --iteration="${ITERATION:-0}" \
+            --history-days="${HISTORY_DAYS:-200}" \
+            --stride-days="${STRIDE_DAYS:-1}"
