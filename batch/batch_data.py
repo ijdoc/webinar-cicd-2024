@@ -1,7 +1,6 @@
 import wandb
 import os
 import pandas as pd
-import sys
 import argparse
 
 
@@ -10,11 +9,11 @@ def main(args):
     with wandb.init(
         # mode="disabled",
         project="wandb-webinar-cicd-2024",
-        job_type="sample-data",
+        job_type="batch-data",
         config={
-            "type": args.data_type,  # The type of dataset to sample (training or production)
-            "period_iteration": args.period_iteration,  # The iteration of the dataset to sample
-            "history_days": args.history_days,  # The total number of days to sample
+            "type": args.data_type,  # The type of dataset to batch (training or production)
+            "period_iteration": args.period_iteration,  # The iteration of the dataset to batch
+            "history_days": args.history_days,  # The total length of the history batch in days
             "stride_days": args.stride_days,  # The number of days to stride between iterations
         },
     ) as run:
@@ -73,10 +72,10 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--data-type", type=str, default="training", choices=["training", "production"]
+        "--type", type=str, default="training", choices=["training", "production"]
     )
     parser.add_argument("--period-iteration", type=int, default=0)
     parser.add_argument("--history-days", type=int, default=200)
-    parser.add_argument("--stride-days", type=int, default=45)
+    parser.add_argument("--stride-days", type=int, default=1)
 
     main(parser.parse_args())
