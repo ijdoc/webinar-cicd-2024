@@ -38,9 +38,10 @@ jobs:
           drift_detected=$(echo "$output" | grep "DRIFT_DETECTED=" | cut -d'=' -f2)
           echo "drift_detected=$drift_detected" >> $GITHUB_OUTPUT
           if [ "$drift_detected" == "True" ]; then
-            echo "{Drift detected!}" >> $GITHUB_STEP_SUMMARY
+            echo "> [!WARNING]" >> $GITHUB_STEP_SUMMARY
+            echo "> Data drift detected!" >> $GITHUB_STEP_SUMMARY
           else
-            echo "{No drift detected}" >> $GITHUB_STEP_SUMMARY
+            echo "> ✅ No drift detected" >> $GITHUB_STEP_SUMMARY
           fi
 
   retrain:
