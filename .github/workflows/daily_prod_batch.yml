@@ -31,6 +31,8 @@ jobs:
           pipenv sync
 
       - name: ⚙️ Run Drift Check
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
         run: |
           cd drift
           pipenv run python check_drift.py
@@ -38,10 +40,12 @@ jobs:
     needs: drift_check
     runs-on: self-hosted
     steps:
-      - name: Checkout repository
+      - name: ⏬ Checkout repository
         uses: actions/checkout@v2
 
       - name: Say hi!
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
         run: |
           cd train
           echo "Hello!"
