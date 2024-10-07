@@ -1,7 +1,7 @@
 import wandb
 from scipy.stats import ks_2samp
 import pandas as pd
-
+import sys
 
 def check_feature_drift(feature_initial, feature_new, threshold=0.05):
     """
@@ -52,21 +52,25 @@ with wandb.init(
     train_data = (
         run.use_artifact("training_data:latest").get("training_data").get_dataframe()
     )
-    prod_data = (
-        run.use_artifact("production_data:latest")
-        .get("production_data")
-        .get_dataframe()
-    )
+    prod_artifact = run.use_artifact("production_data:latest")
+    prod_data = prod_artifact.get("production_data").get_dataframe()
 
     drift_results = run_drift_check(
         train_data, prod_data, ["active_power", "temp", "humidity", "pressure"]
     )
 
-    if any(drift_results.values()):
+    drift_detected = any(drift_results.values())
+    if drift_detected:
         print("Drift detected!")
-        # Add @drift alias to training artifact
-        artifact = run.use_artifact("training_data:latest")
-        artifact.aliases.append("drift")
-        artifact.save()
+        # TODO: Log prod data as training data and create a report explaining the drift
+        artifact = wandb.Artifact("training_data", type="dataset")
+        artifact.add(wandb.Table(dataframe=prod_data), "training_data")
+        artifact.description = prod_artifact.description
+        run.log_artifact(artifact)
+    else:
+        print("No drift detected.")
 
     print(drift_results)
+
+    # Print the drift detection result in a parseable format
+    print(f"::DRIFT_DETECTED::{drift_detected}")
