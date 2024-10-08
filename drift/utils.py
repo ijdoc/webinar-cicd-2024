@@ -40,7 +40,8 @@ def check_feature_drift(feature_initial, feature_new, threshold=0.05):
         bool: True if drift is detected, False otherwise.
     """
     ks_stat, p_value = ks_2samp(feature_initial, feature_new)
-    return p_value < threshold
+    result = p_value < threshold
+    return {"p_value": p_value, "drifted": result}
 
 
 def run_drift_check(initial_data, new_data, feature_columns, threshold=0.05):

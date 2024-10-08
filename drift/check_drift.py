@@ -34,12 +34,16 @@ with wandb.init(
         run.log({media_key: wandb.Image(plt)})
         plt.close()
 
-    # Generate and log drift detection results table
-    drift_results_table = pd.DataFrame(
-        list(drift_results.items()), columns=["Feature", "Drift Detected"]
+    # Generate and log drift detection results dataframe
+    df_drift_results = pd.DataFrame.from_dict(drift_results, orient="index")
+    df_drift_results.reset_index(inplace=True)
+    df_drift_results.rename(
+        columns={"index": "Feature", "p_val": "P-Value", "drifted": "Drift Detected"},
+        inplace=True,
     )
+
     drift_detected = any(drift_results.values())
-    run.log({"drift_results": wandb.Table(dataframe=drift_results_table)})
+    run.log({"drift_results": wandb.Table(dataframe=df_drift_results)})
 
     # Create a report explaining the drift (or lack thereof)
     report_url = make_report(
