@@ -57,7 +57,7 @@ def main():
     }
 
     data = {
-        "event_type": "prod_data_batch",  # Must match the type defined in the workflow
+        "event_type": "Daily Prod Data Log",  # Must match the type defined in the workflow
         "client_payload": {
             "iteration": args.iteration,
             "type": args.type,

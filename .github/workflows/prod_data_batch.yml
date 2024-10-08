@@ -7,7 +7,7 @@ on:
   # schedule:
   #   - cron: '0 0 * * *'  # Run every day at midnight
   repository_dispatch:  # Allow triggering from a POST request
-    types: [prod_data_batch]
+    types: ["Daily Prod Data Log"]
   push: # run on push to specific branches (use for debugging)
     branches: e2e_mock  # Run on push to e2e_mock branch
 
