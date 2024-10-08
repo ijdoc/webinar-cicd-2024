@@ -65,16 +65,12 @@ with wandb.init(
 
     if drift_detected:
         print("> [!WARNING]")
-        print("> Drift detected.\n")
+        print("> Drift detected.")
         # Log prod data as training data
         artifact = wandb.Artifact("training_data", type="dataset")
         artifact.add(wandb.Table(dataframe=prod_data), "training_data")
         artifact.description = prod_artifact.description
         artifact = run.log_artifact(artifact).wait()
-        print(
-            f"Production batch `{prod_artifact.source_name}` logged as candidate "
-            f"training data `{artifact.source_name}`."
-        )
         # Open a github issue asking for manual review
         issue_title = f"Data drift detected on {train_artifact.source_name}"
         drifted_features = ", ".join(
@@ -87,7 +83,12 @@ with wandb.init(
             f"If approved, link the [logged artifact](https://wandb.ai//{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.source_name}) "
             f"to the training Registry (`jdoc-org/wandb-registry-dataset/training`), otherwise, close this issue."
         )
-        open_github_issue(issue_title, issue_body, labels=["drift", "data"])
+        issue_url = open_github_issue(issue_title, issue_body, labels=["drift", "data"])
+        print(
+            f"Production batch `{prod_artifact.source_name}` was logged "
+            f"as candidate training data `{artifact.source_name}`. "
+            f"An [issue]({issue_url}) was created for manual review. "
+        )
     else:
         print("> No drift detected.\n")
 

@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import wandb.apis.reports.v1 as wr  # For creating reports
 import os
 import requests
+import subprocess
 
 
 def ecdf(data):
@@ -182,8 +183,10 @@ def open_github_issue(issue_title, issue_body, labels=None):
     if response.status_code == 201:
         issue_url = response.json()["html_url"]
         print(f"GitHub issue created: {issue_url}")
+        return issue_url
     else:
         print(f"Failed to create GitHub issue: {response.content}")
+    return None
 
 
 def get_github_repo_info():
