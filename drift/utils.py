@@ -172,7 +172,6 @@ def open_github_issue(issue_title, issue_body, labels=None):
 
     # GitHub API endpoint for creating issues
     url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/issues"
-    print(f"URL: {url}")
 
     headers = {
         "Authorization": f"Bearer {token}",
@@ -185,7 +184,6 @@ def open_github_issue(issue_title, issue_body, labels=None):
     response = requests.post(url, headers=headers, json=data)
     if response.status_code == 201:
         issue_url = response.json()["html_url"]
-        print(f"GitHub issue created: {issue_url}")
         return issue_url
     else:
         raise RuntimeError(f"Failed to create GitHub issue: {response.content}")
@@ -203,8 +201,6 @@ def get_github_repo_info():
             .decode()
             .strip()
         )
-
-        print(f"Remote URL: {remote_url}")
 
         # Parse the URL to get owner and repo name
         if remote_url.startswith("git@"):

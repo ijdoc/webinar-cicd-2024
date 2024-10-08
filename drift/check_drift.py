@@ -85,10 +85,11 @@ with wandb.init(
         )
         issue_url = open_github_issue(issue_title, issue_body, labels=["drift", "data"])
         print(
-            f"Production batch `{prod_artifact.source_name}` was logged "
-            f"as candidate training data `{artifact.source_name}`. "
-            f"An [issue]({issue_url}) was created for manual review. "
+            f"Production batch `{prod_artifact.source_name}` has been logged "
+            f"as candidate to replace training data `{artifact.source_name}`. "
+            f"An [issue]({issue_url}) was created for manual review:\n"
         )
+        print(f"- [Data Drift Issue]({issue_url})")
     else:
         print("> No drift detected.\n")
 
