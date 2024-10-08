@@ -172,10 +172,12 @@ def open_github_issue(issue_title, issue_body, labels=None):
 
     # GitHub API endpoint for creating issues
     url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/issues"
+    print(f"{url}")
 
     headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json",
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
     }
 
     data = {"title": issue_title, "body": issue_body, "labels": labels}
@@ -186,7 +188,7 @@ def open_github_issue(issue_title, issue_body, labels=None):
         print(f"GitHub issue created: {issue_url}")
         return issue_url
     else:
-        print(f"Failed to create GitHub issue: {response.content}")
+        print(f"Failed to create GitHub issue: {response.content}\n")
     return None
 
 
