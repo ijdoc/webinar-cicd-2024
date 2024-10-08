@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import wandb.apis.reports.v1 as wr  # For creating reports
 import os
+import requests
 
 
 def ecdf(data):
