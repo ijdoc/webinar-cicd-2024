@@ -11,7 +11,7 @@ def main(args):
         project="wandb-webinar-cicd-2024",
         job_type="batch-data",
         config={
-            "type": args.batch_type,  # The type of dataset to batch (training or production)
+            "batch_type": args.batch_type,  # The type of dataset to batch (training or production)
             "iteration": args.iteration,  # The iteration of the dataset to batch
             "history_days": args.history_days,  # The total length of the history batch in days
             "stride_days": args.stride_days,  # The number of days to stride between iterations
