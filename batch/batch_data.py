@@ -65,7 +65,7 @@ def main(args):
         )
         artifact = run.log_artifact(artifact).wait()
         print(
-            f"{batch_type} data logged as {artifact.source_name}."
+            f"New `{batch_type}` batch logged as `{artifact.source_name}`.\n"
             f"- Iteration: {iteration}\n"
             f"- Iteration Stride: {stride_days} day(s)\n"
             f"- Total length: {history_days} day(s)"

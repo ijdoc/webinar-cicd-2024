@@ -113,8 +113,8 @@ def make_report(entity, project, run_name, drift_detected, media_keys):
         wr.MarkdownBlock(
             text=(
                 "# ECDF Plots\n\n"
-                "Empirical Cumulative Distribution Function (ECDF) plots are shown below to"
-                "facilitate analysis of feature differences."
+                "Empirical Cumulative Distribution Function (ECDF) plots are shown below to "
+                "facilitate review of feature differences."
             )
         )
     )
