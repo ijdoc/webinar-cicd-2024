@@ -6,6 +6,7 @@ import wandb.apis.reports.v1 as wr  # For creating reports
 import os
 import requests
 import subprocess
+import re
 
 
 def ecdf(data):

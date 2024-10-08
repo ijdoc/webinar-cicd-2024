@@ -42,7 +42,7 @@ with wandb.init(
         inplace=True,
     )
 
-    drift_detected = any(drift_results.values())
+    drift_detected = df_drift_results["Drift Detected"].any()
     run.log({"drift_results": wandb.Table(dataframe=df_drift_results)})
 
     # Create a report explaining the drift (or lack thereof)
@@ -65,7 +65,7 @@ with wandb.init(
 
     if drift_detected:
         print("> [!WARNING]")
-        print("> Drift detected.")
+        print("> Drift detected.\n")
         # Log prod data as training data
         artifact = wandb.Artifact("training_data", type="dataset")
         artifact.add(wandb.Table(dataframe=prod_data), "training_data")
