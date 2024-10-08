@@ -32,14 +32,16 @@ jobs:
       - name: ⚙️ Log Production Data
         env:
           WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
-          # TYPE: ${{ github.event.client_payload.type }}
+          # BATCH_TYPE: ${{ github.event.client_payload.batch_type }}
           ITERATION: ${{ github.event.client_payload.iteration }}
           HISTORY_DAYS: ${{ github.event.client_payload.history_days }}
           STRIDE_DAYS: ${{ github.event.client_payload.stride_days }}
         run: |
           cd batch
-          pipenv run python batch_data.py \
-            --type=production \
-            --iteration="${ITERATION:-0}" \
-            --history-days="${HISTORY_DAYS:-200}" \
-            --stride-days="${STRIDE_DAYS:-1}"
+          command="pipenv run python batch_data.py \
+            --batch-type=production \
+            --iteration=${ITERATION:-0} \
+            --history-days=${HISTORY_DAYS:-200} \
+            --stride-days=${STRIDE_DAYS:-1}"
+          output=$($command)
+          echo "$output" >> $GITHUB_STEP_SUMMARY

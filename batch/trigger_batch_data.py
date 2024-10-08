@@ -9,7 +9,7 @@ def main():
     )
     parser.add_argument("--iteration", type=int, default=0, help="Iteration number")
     parser.add_argument(
-        "--type",
+        "--batch-type",
         type=str,
         default="production",
         choices=["training", "production"],
@@ -60,7 +60,7 @@ def main():
         "event_type": "Daily Prod Data Log",  # Must match the type defined in the workflow
         "client_payload": {
             "iteration": args.iteration,
-            "type": args.type,
+            "batch_type": args.batch_type,
             "history_days": args.history_days,
             "stride_days": args.stride_days,
         },

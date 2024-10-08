@@ -56,16 +56,18 @@ with wandb.init(
     report_artifact.add_file("report.txt")
     report_artifact = run.log_artifact(report_artifact)
 
-    print(f"Drift report available at {report_url}")
-
     if drift_detected:
-        print("Drift detected!")
+        print("> [!WARNING]")
+        print("> Drift detected.\n")
         # Log prod data as training data
         artifact = wandb.Artifact("training_data", type="dataset")
         artifact.add(wandb.Table(dataframe=prod_data), "training_data")
         artifact.description = prod_artifact.description
         artifact = run.log_artifact(artifact).wait()
-        print(f"Production batch {artifact.source_name} logged as training data.")
+        print(
+            f"Production batch `{prod_artifact.source_name}` logged as candidate "
+            f"training data `{artifact.source_name}`."
+        )
         # Open a github issue asking for manual review
         issue_title = f"Data drift detected on {train_artifact.source_name}"
         drifted_features = ", ".join(
@@ -80,9 +82,11 @@ with wandb.init(
         )
         open_github_issue(issue_title, issue_body, labels=["drift", "data"])
     else:
-        print("No drift detected.")
+        print("> No drift detected.\n")
 
-    # Print the drift detection result in a parseable format.
+    print(f"- [Full data drift report]({report_url})")
+
+    # Optionally the drift detection result in a parseable format.
     # Helpful if you want to use this result in a CI/CD pipeline
     # to automatically update the data and/or retrain your model.
-    print(f"DRIFT_DETECTED={drift_detected}")
+    # print(f"DRIFT_DETECTED={drift_detected}")

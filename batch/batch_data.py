@@ -11,14 +11,14 @@ def main(args):
         project="wandb-webinar-cicd-2024",
         job_type="batch-data",
         config={
-            "type": args.type,  # The type of dataset to batch (training or production)
+            "type": args.batch_type,  # The type of dataset to batch (training or production)
             "iteration": args.iteration,  # The iteration of the dataset to batch
             "history_days": args.history_days,  # The total length of the history batch in days
             "stride_days": args.stride_days,  # The number of days to stride between iterations
         },
     ) as run:
 
-        type = run.config.type
+        batch_type = run.config.batch_type
         iteration = run.config.iteration
         history_days = run.config.history_days
         stride_days = run.config.stride_days
@@ -32,7 +32,6 @@ def main(args):
 
         # Grab only the columns we want
         data = data[["date", "active_power", "temp", "humidity", "pressure"]]
-        print(data.head())
 
         # Convert the data column to a datetime index
         data["date"] = pd.to_datetime(data["date"])
@@ -42,13 +41,11 @@ def main(args):
         daily_data = data.resample("D").mean()
 
         # Grab history_days of data, offset by iteration and stride_days (if production)
-        if type == "training":
+        if batch_type == "training":
             offset = stride_days * iteration
-        elif type == "production":
+        elif batch_type == "production":
             offset = stride_days * (iteration + 1)
         data = daily_data.iloc[offset : offset + history_days]
-
-        print(data.head())
 
         # Log a summary of the data
         run.log(
@@ -59,20 +56,26 @@ def main(args):
         )
 
         # Log the dataset
-        artifact = wandb.Artifact(f"{type}_data", type="dataset")
-        artifact.add(wandb.Table(dataframe=data), f"{type}_data")
+        artifact = wandb.Artifact(f"{batch_type}_data", type="dataset")
+        artifact.add(wandb.Table(dataframe=data), f"{batch_type}_data")
         artifact.description = (
-            f"Batched {type} data for iteration {iteration}. "
+            f"Batched {batch_type} data for iteration {iteration}. "
             f"This iteration simulated data collection over the previous "
             f"{history_days} days, with a stride of {stride_days} days"
         )
-        run.log_artifact(artifact)
+        artifact = run.log_artifact(artifact).wait()
+        print(
+            f"{batch_type} data logged as {artifact.source_name}."
+            f"- Iteration: {iteration}\n"
+            f"- Iteration Stride: {stride_days} day(s)\n"
+            f"- Total length: {history_days} day(s)"
+        )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--type", type=str, default="training", choices=["training", "production"]
+        "--batch-type", type=str, default="training", choices=["training", "production"]
     )
     parser.add_argument("--iteration", type=int, default=0)
     parser.add_argument("--history-days", type=int, default=200)
