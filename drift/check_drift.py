@@ -20,7 +20,10 @@ with wandb.init(
 
     feature_list = ["active_power", "temp", "humidity", "pressure"]
 
-    drift_results = run_drift_check(train_data, prod_data, feature_list)
+    threshold = 0.05
+    drift_results = run_drift_check(
+        train_data, prod_data, feature_list, threshold=threshold
+    )
 
     # Generate and log ECDF plots
     media_keys = []
@@ -40,7 +43,7 @@ with wandb.init(
 
     # Create a report explaining the drift (or lack thereof)
     report_url = make_report(
-        run.entity, run.project, run.name, drift_detected, media_keys
+        run.entity, run.project, run.name, threshold, drift_detected, media_keys
     )
 
     run.config["report_url"] = report_url  # Link report to the run

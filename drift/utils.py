@@ -13,7 +13,7 @@ def ecdf(data):
     return x, y
 
 
-def plot_ecdf(feature_name, data1, data2, label1="Initial", label2="New"):
+def plot_ecdf(feature_name, data1, data2, label1="Original", label2="Candidate"):
     x1, y1 = ecdf(data1.dropna())
     x2, y2 = ecdf(data2.dropna())
     plt.figure(figsize=(8, 6))
@@ -43,7 +43,7 @@ def check_feature_drift(feature_initial, feature_new, threshold=0.05):
     return p_value < threshold
 
 
-def run_drift_check(initial_data, new_data, feature_columns):
+def run_drift_check(initial_data, new_data, feature_columns, threshold=0.05):
     """
     Runs a data drift check on selected feature columns between initial and new data.
 
@@ -60,13 +60,13 @@ def run_drift_check(initial_data, new_data, feature_columns):
     # Check drift for each feature
     for feature in feature_columns:
         drift_results[feature] = check_feature_drift(
-            initial_data[feature], new_data[feature]
+            initial_data[feature], new_data[feature], threshold=threshold
         )
 
     return drift_results
 
 
-def make_report(entity, project, run_name, drift_detected, media_keys):
+def make_report(entity, project, run_name, threshold, drift_detected, media_keys):
     if drift_detected:
         description = "Drift detected in the data. Please review the report."
     else:
@@ -85,10 +85,9 @@ def make_report(entity, project, run_name, drift_detected, media_keys):
         wr.MarkdownBlock(
             text=(
                 "# Summary of Results\n\n"
-                "Each feature is checked separately for drift using a KS test. `False` means no"
-                "drift was detected, while `True` indicates drift was detected. If one or more"
-                "features show drift, it is recommended that the initial dataset (training) be"
-                "replaced with the new dataset (production)."
+                f"Each feature was checked separately for drift using a KS test with "
+                f"`p < {threshold}`. `False` means no drift was detected, while "
+                "`True` indicates drift was detected."
             )
         )
     )
