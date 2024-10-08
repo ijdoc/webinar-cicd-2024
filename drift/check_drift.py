@@ -35,6 +35,7 @@ with wandb.init(
     drift_results_table = pd.DataFrame(
         list(drift_results.items()), columns=["Feature", "Drift Detected"]
     )
+    drift_detected = any(drift_results.values())
     run.log({"drift_results": wandb.Table(dataframe=drift_results_table)})
 
     # Create a report explaining the drift (or lack thereof)
@@ -57,7 +58,6 @@ with wandb.init(
 
     print(f"Drift report available at {report_url}")
 
-    drift_detected = any(drift_results.values())
     if drift_detected:
         print("Drift detected!")
         # Log prod data as training data
