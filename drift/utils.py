@@ -172,7 +172,7 @@ def open_github_issue(issue_title, issue_body, labels=None):
 
     # GitHub API endpoint for creating issues
     url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/issues"
-    print(f"URL: {url}", flush=True)
+    print(f"URL: {url}")
 
     headers = {
         "Authorization": f"Bearer {token}",
@@ -204,7 +204,7 @@ def get_github_repo_info():
             .strip()
         )
 
-        print(f"Remote URL: {remote_url}", flush=True)
+        print(f"Remote URL: {remote_url}")
 
         # Parse the URL to get owner and repo name
         if remote_url.startswith("git@"):
@@ -212,7 +212,7 @@ def get_github_repo_info():
             pattern = r"git@github.com:(.+)/(.+)\.git"
         elif remote_url.startswith("https://"):
             # HTTPS URL
-            pattern = r"https://github.com/(.+)/(.+)\.git"
+            pattern = r"https://github.com/(.+)/(.+)"
         else:
             # Other formats
             return None, None
