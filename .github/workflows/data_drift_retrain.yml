@@ -41,7 +41,7 @@ jobs:
             echo "> [!WARNING]" >> $GITHUB_STEP_SUMMARY
             echo "> Data drift detected!" >> $GITHUB_STEP_SUMMARY
           else
-            echo "> ✅ No drift detected" >> $GITHUB_STEP_SUMMARY
+            echo "> No drift detected, will not retrain" >> $GITHUB_STEP_SUMMARY
           fi
 
   retrain:

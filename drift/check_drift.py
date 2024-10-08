@@ -1,46 +1,7 @@
 import wandb
-from scipy.stats import ks_2samp
+from utils import run_drift_check, plot_ecdf, make_report
+import matplotlib.pyplot as plt
 import pandas as pd
-import sys
-
-def check_feature_drift(feature_initial, feature_new, threshold=0.05):
-    """
-    Checks for data drift between two feature distributions using the KS test.
-
-    Args:
-        feature_initial (pd.Series): Historical data for the feature.
-        feature_new (pd.Series): New data for the feature to compare against the historical data.
-        threshold (float): p-value threshold for drift detection.
-
-    Returns:
-        bool: True if drift is detected, False otherwise.
-    """
-    ks_stat, p_value = ks_2samp(feature_initial, feature_new)
-    return p_value < threshold
-
-
-def run_drift_check(initial_data, new_data, feature_columns):
-    """
-    Runs a data drift check on selected feature columns between initial and new data.
-
-    Args:
-        initial_data (Dataframe): The initial dataframe.
-        new_data (Dataframe): The new (production) dataframe.
-        feature_columns (list): List of feature columns to check for drift.
-
-    Returns:
-        dict: Dictionary with drift status for each feature.
-    """
-    drift_results = {}
-
-    # Check drift for each feature
-    for feature in feature_columns:
-        drift_results[feature] = check_feature_drift(
-            initial_data[feature], new_data[feature]
-        )
-
-    return drift_results
-
 
 with wandb.init(
     # mode="disabled",
@@ -49,28 +10,65 @@ with wandb.init(
 ) as run:
 
     # Grab the latest training and production dataframes
-    train_data = (
-        run.use_artifact("training_data:latest").get("training_data").get_dataframe()
-    )
+    train_artifact = run.use_artifact("jdoc-org/wandb-registry-dataset/training:latest")
+    run.config["train_data"] = train_artifact.source_name
+    train_data = train_artifact.get("training_data").get_dataframe()
+
     prod_artifact = run.use_artifact("production_data:latest")
+    run.config["prod_data"] = prod_artifact.source_name
     prod_data = prod_artifact.get("production_data").get_dataframe()
 
-    drift_results = run_drift_check(
-        train_data, prod_data, ["active_power", "temp", "humidity", "pressure"]
+    feature_list = ["active_power", "temp", "humidity", "pressure"]
+
+    drift_results = run_drift_check(train_data, prod_data, feature_list)
+
+    # Generate and log ECDF plots
+    media_keys = []
+    for feature in feature_list:
+        media_key = f"ECDF/{feature}"
+        media_keys.append(media_key)
+        plt = plot_ecdf(feature, train_data[feature], prod_data[feature])
+        run.log({media_key: wandb.Image(plt)})
+        plt.close()
+
+    # Generate and log drift detection results table
+    drift_results_table = pd.DataFrame(
+        list(drift_results.items()), columns=["Feature", "Drift Detected"]
     )
+    run.log({"drift_results": wandb.Table(dataframe=drift_results_table)})
 
     drift_detected = any(drift_results.values())
     if drift_detected:
         print("Drift detected!")
-        # TODO: Log prod data as training data and create a report explaining the drift
+        # Log prod data as training data
         artifact = wandb.Artifact("training_data", type="dataset")
         artifact.add(wandb.Table(dataframe=prod_data), "training_data")
         artifact.description = prod_artifact.description
         run.log_artifact(artifact)
+        # TODO: open a github issue asking for manual review
     else:
         print("No drift detected.")
 
-    print(drift_results)
+    # Create a report explaining the drift (or lack thereof)
+    report_url = make_report(
+        run.entity, run.project, run.name, drift_detected, media_keys
+    )
+
+    # Link report to the run
+    run.config["report_url"] = report_url
+
+    # Add report to lineage
+    with open("report.txt", "w") as f:
+        f.write(report_url)
+
+    art_type = "report"
+    art_name = f"{run.name}-drift"
+    report_artifact = wandb.Artifact(name=art_name, type=art_type)
+    report_artifact.description = report_url
+    report_artifact.add_file("report.txt")
+    report_artifact = run.log_artifact(report_artifact)
+
+    print(f"Drift report available at {report_url}")
 
     # Print the drift detection result in a parseable format
     print(f"DRIFT_DETECTED={drift_detected}")
