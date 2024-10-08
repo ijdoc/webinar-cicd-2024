@@ -4,10 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-wandb = "*"
 scipy = "*"
 pandas = "*"
 protobuf = "*"
+matplotlib = "*"
+wandb = {extras = ["workspaces"], version = "*"}
 
 [dev-packages]
 

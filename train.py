@@ -35,8 +35,10 @@ with wandb.init(
     tgt_len = run.config.tgt_len
     batch_size = run.config.batch_size
 
-    # Grab the training dataset
-    data = run.use_artifact("training_data:latest").get("training_data").get_dataframe()
+    # Grab the training dataset from the registry
+    artifact = run.use_artifact("jdoc-org/wandb-registry-dataset/training:latest'")
+    run.config["train_data"] = artifact.source_name
+    data = artifact.get("training_data").get_dataframe()
     input_columns = ["temp", "humidity", "pressure", "active_power"]
     target_column = "active_power"
     input_dim = len(input_columns)
