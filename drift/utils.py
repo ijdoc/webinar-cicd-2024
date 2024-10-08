@@ -188,7 +188,7 @@ def open_github_issue(issue_title, issue_body, labels=None):
         print(f"GitHub issue created: {issue_url}")
         return issue_url
     else:
-        print(f"Failed to create GitHub issue: {response.content}\n")
+        raise RuntimeError(f"Failed to create GitHub issue: {response.content}")
     return None
 
 
@@ -203,6 +203,8 @@ def get_github_repo_info():
             .decode()
             .strip()
         )
+
+        print(f"Remote URL: {remote_url}")
 
         # Parse the URL to get owner and repo name
         if remote_url.startswith("git@"):
