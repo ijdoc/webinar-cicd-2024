@@ -9,7 +9,7 @@ on:
   repository_dispatch:  # Allow triggering from a POST request
     types: ["Daily Prod Data Log"]
   push: # run on push to specific branches (use for debugging)
-    branches: e2e_mock  # Run on push to e2e_mock branch
+    branches: my_debug_branch  # Run on push to debug branch
 
 jobs:
   batch_data:

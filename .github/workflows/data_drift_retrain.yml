@@ -11,6 +11,9 @@ on:
 jobs:
   drift_check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write  # Grant write access to issues
     outputs:  # Define outputs for downstream jobs
       drift_detected: ${{ steps.drift_check.outputs.drift_detected }}
     steps:
@@ -31,6 +34,7 @@ jobs:
       - name: ⚙️ Run Drift Check
         env:
           WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         id: drift_check
         run: |
           cd drift
@@ -44,16 +48,18 @@ jobs:
             echo "> No drift detected, will not retrain" >> $GITHUB_STEP_SUMMARY
           fi
 
-  retrain:
-    needs: drift_check
-    if: ${{ needs.drift_check.outputs.drift_detected == 'True' }}
-    runs-on: self-hosted
-    steps:
-      - name: ⏬ Checkout repository
-        uses: actions/checkout@v4
+  # Uncomment the following block to automatically
+  # retrain the model when drift is detected
+  # retrain:
+  #   needs: drift_check
+  #   if: ${{ needs.drift_check.outputs.drift_detected == 'True' }}
+  #   runs-on: self-hosted
+  #   steps:
+  #     - name: ⏬ Checkout repository
+  #       uses: actions/checkout@v4
 
-      - name: ⚙️ Train!
-        env:
-          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
-        run: |
-          python train.py
+  #     - name: ⚙️ Train!
+  #       env:
+  #         WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+  #       run: |
+  #         python train.py

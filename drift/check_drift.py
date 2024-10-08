@@ -1,5 +1,5 @@
 import wandb
-from utils import run_drift_check, plot_ecdf, make_report
+from utils import run_drift_check, plot_ecdf, make_report, open_github_issue
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -37,25 +37,12 @@ with wandb.init(
     )
     run.log({"drift_results": wandb.Table(dataframe=drift_results_table)})
 
-    drift_detected = any(drift_results.values())
-    if drift_detected:
-        print("Drift detected!")
-        # Log prod data as training data
-        artifact = wandb.Artifact("training_data", type="dataset")
-        artifact.add(wandb.Table(dataframe=prod_data), "training_data")
-        artifact.description = prod_artifact.description
-        run.log_artifact(artifact)
-        # TODO: open a github issue asking for manual review
-    else:
-        print("No drift detected.")
-
     # Create a report explaining the drift (or lack thereof)
     report_url = make_report(
         run.entity, run.project, run.name, drift_detected, media_keys
     )
 
-    # Link report to the run
-    run.config["report_url"] = report_url
+    run.config["report_url"] = report_url  # Link report to the run
 
     # Add report to lineage
     with open("report.txt", "w") as f:
@@ -70,5 +57,32 @@ with wandb.init(
 
     print(f"Drift report available at {report_url}")
 
-    # Print the drift detection result in a parseable format
+    drift_detected = any(drift_results.values())
+    if drift_detected:
+        print("Drift detected!")
+        # Log prod data as training data
+        artifact = wandb.Artifact("training_data", type="dataset")
+        artifact.add(wandb.Table(dataframe=prod_data), "training_data")
+        artifact.description = prod_artifact.description
+        artifact = run.log_artifact(artifact).wait()
+        print(f"Production batch {artifact.source_name} logged as training data.")
+        # Open a github issue asking for manual review
+        issue_title = f"Data drift detected on {train_artifact.source_name}"
+        drifted_features = ", ".join(
+            [feature for feature, drift in drift_results.items() if drift]
+        )
+        issue_body = (
+            f"Drift has been detected in the following features: {drifted_features}.\n\n"
+            f"Please review the [logged artifact](https://wandb.ai//{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.source_name}) "
+            f"and the [drift report]({report_url}) to determine if the training data should be updated.\n\n"
+            f"If approved, link the [logged artifact](https://wandb.ai//{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.source_name}) "
+            f"to the training Registry (`jdoc-org/wandb-registry-dataset/training`), otherwise, close this issue."
+        )
+        open_github_issue(issue_title, issue_body, labels=["drift", "data"])
+    else:
+        print("No drift detected.")
+
+    # Print the drift detection result in a parseable format.
+    # Helpful if you want to use this result in a CI/CD pipeline
+    # to automatically update the data and/or retrain your model.
     print(f"DRIFT_DETECTED={drift_detected}")

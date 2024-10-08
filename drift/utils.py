@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import wandb.apis.reports.v1 as wr  # For creating reports
+import os
 
 
 def ecdf(data):
@@ -156,3 +157,64 @@ def make_report(entity, project, run_name, drift_detected, media_keys):
     report.save()
 
     return report.url
+
+
+def open_github_issue(issue_title, issue_body, labels=None):
+    """
+    Opens a new issue in the GitHub repository.
+    """
+
+    repo_owner, repo_name = get_github_repo_info()
+    token = os.environ.get("GITHUB_TOKEN")
+
+    # GitHub API endpoint for creating issues
+    url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/issues"
+
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+
+    data = {"title": issue_title, "body": issue_body, "labels": labels}
+
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 201:
+        issue_url = response.json()["html_url"]
+        print(f"GitHub issue created: {issue_url}")
+    else:
+        print(f"Failed to create GitHub issue: {response.content}")
+
+
+def get_github_repo_info():
+    try:
+        # Get the remote origin URL
+        remote_url = (
+            subprocess.check_output(
+                ["git", "config", "--get", "remote.origin.url"],
+                stderr=subprocess.STDOUT,
+            )
+            .decode()
+            .strip()
+        )
+
+        # Parse the URL to get owner and repo name
+        if remote_url.startswith("git@"):
+            # SSH URL
+            pattern = r"git@github.com:(.+)/(.+)\.git"
+        elif remote_url.startswith("https://"):
+            # HTTPS URL
+            pattern = r"https://github.com/(.+)/(.+)\.git"
+        else:
+            # Other formats
+            return None, None
+
+        match = re.match(pattern, remote_url)
+        if match:
+            owner = match.group(1)
+            repo = match.group(2)
+            return owner, repo
+        else:
+            return None, None
+    except Exception as e:
+        print(f"Error retrieving GitHub repo info: {e}")
+        return None, None
