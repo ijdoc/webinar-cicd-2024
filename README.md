@@ -24,5 +24,6 @@ GITHUB_TOKEN="paste_your_token_here"
 
 ### Trigger the workload
 ```bash
-pipenv run python trigger_batch_data.py --repo ijdoc/webinar-cicd-2024 --token=$GITHUB_PAT
+cd batch
+pipenv run python trigger_batch_data.py --repo ijdoc/webinar-cicd-2024 --iteration=25
 ```
