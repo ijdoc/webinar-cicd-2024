@@ -62,9 +62,12 @@ with wandb.init(
 
     # 2. Load the latest production data
     # prod_artifact = run.use_artifact("production_data:latest")
+    # run.config["prod_data"] = prod_artifact.name
+    # data = prod_artifact.get("production_data").get_dataframe()
+    # 2. Load the original training data
     prod_artifact = run.use_artifact("training_data:v3")
     run.config["prod_data"] = prod_artifact.name
-    data = prod_artifact.get("production_data").get_dataframe()
+    data = prod_artifact.get("training_data").get_dataframe()
 
     # 3. Preprocess the data using the same normalization parameters
     # Normalize input features
