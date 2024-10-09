@@ -61,7 +61,8 @@ with wandb.init(
     model.to(device)
 
     # 2. Load the latest production data
-    prod_artifact = run.use_artifact("production_data:latest")
+    # prod_artifact = run.use_artifact("production_data:latest")
+    prod_artifact = run.use_artifact("training_data:v3")
     run.config["prod_data"] = prod_artifact.name
     data = prod_artifact.get("production_data").get_dataframe()
 
