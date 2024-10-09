@@ -25,7 +25,7 @@ jobs:
         id: eval_check
         run: |
           cd eval
-          output=$(pipenv run python eval.py)
+          output=$(python eval.py)
           echo "$output" >> $GITHUB_STEP_SUMMARY
 
   # Uncomment the following block to automatically
