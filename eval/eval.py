@@ -1,4 +1,4 @@
-# check_model_degradation.py
+# eval.py
 
 import wandb
 import pandas as pd
@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from transformer_model import TimeSeriesTransformer  # Ensure this is accessible
+from transformer_model import TimeSeriesTransformer
 from utils import plot_predictions_vs_actuals
 import os
 
@@ -26,7 +26,7 @@ with wandb.init(
     # Load the checkpoint
     checkpoint = torch.load(model_path, map_location=torch.device("cpu"))
 
-    # Extract the normalization parameters
+    # Extract the normalization parameters and model hyperparameters
     input_mean = pd.Series(checkpoint["input_mean"])
     input_std = pd.Series(checkpoint["input_std"])
     target_mean = checkpoint["target_mean"]
@@ -86,12 +86,13 @@ with wandb.init(
     input_data = data[input_columns].values  # (num_days, input_dim)
     target_data = data[target_column].values  # (num_days,)
 
-    # Prepare source and target tensors
+    # Prepare source tensors
     src_data_np = np.array([input_data[i : i + src_len] for i in range(num_samples)])
     src_data = torch.from_numpy(
         src_data_np
     ).float()  # (num_samples, src_len, input_dim)
 
+    # Prepare target data for evaluation (actual values)
     tgt_data_np = np.array(
         [target_data[i + src_len : i + src_len + tgt_len] for i in range(num_samples)]
     )
@@ -103,28 +104,44 @@ with wandb.init(
     src_data = src_data.to(device)
     tgt_data = tgt_data.to(device)
 
-    # 4. Make predictions
+    # 4. Make predictions without teacher forcing
     model.eval()
     with torch.no_grad():
         predictions = []
         actuals = []
-        for i in range(0, num_samples, batch_size):
-            src_batch = src_data[i : i + batch_size]  # (batch_size, src_len, input_dim)
-            tgt_batch = tgt_data[i : i + batch_size]  # (batch_size, tgt_len, 1)
 
-            # Prepare the target input (shifted by one time step)
-            tgt_input = tgt_batch[:, :-1, :]  # Remove the last time step
+        for i in range(src_data.size(0)):  # Loop over each sample
+            src_sample = src_data[i : i + 1]  # (1, src_len, input_dim)
+            actual_sequence = tgt_data[i : i + 1]  # (1, tgt_len, 1)
 
-            # Forward pass
-            output = model(src_batch, tgt_input)  # (batch_size, tgt_len - 1, 1)
+            # Initialize the target input with zeros (start token)
+            tgt_input = torch.zeros((1, 1, 1), device=device)
 
-            # Collect predictions and actuals
-            predictions.append(output.cpu().numpy())
-            actuals.append(tgt_batch[:, 1:, :].cpu().numpy())
+            pred_sequence = []
 
-    # Concatenate predictions and actuals
-    predictions = np.concatenate(predictions, axis=0)  # (num_samples, tgt_len - 1, 1)
-    actuals = np.concatenate(actuals, axis=0)  # (num_samples, tgt_len - 1, 1)
+            for t in range(tgt_len):
+                # Predict the next time step
+                output = model(src_sample, tgt_input)  # (1, t+1, 1)
+
+                # Get the last predicted value
+                last_output = output[:, -1:, :]  # (1, 1, 1)
+
+                # Append the last prediction to the sequence
+                pred_sequence.append(last_output.cpu().numpy())
+
+                # Update tgt_input by appending the last prediction
+                tgt_input = torch.cat([tgt_input, last_output], dim=1)  # (1, t+2, 1)
+
+            # Concatenate the predicted sequence (exclude the initial zero)
+            pred_sequence = np.concatenate(pred_sequence, axis=1)  # (1, tgt_len, 1)
+            predictions.append(pred_sequence)
+
+            # Collect the actual target sequence
+            actuals.append(actual_sequence.cpu().numpy())
+
+        # Concatenate predictions and actuals
+        predictions = np.concatenate(predictions, axis=0)  # (num_samples, tgt_len, 1)
+        actuals = np.concatenate(actuals, axis=0)  # (num_samples, tgt_len, 1)
 
     # Reshape for metric calculations
     predictions = predictions.reshape(-1)
