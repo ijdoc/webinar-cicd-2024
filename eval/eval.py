@@ -31,13 +31,13 @@ with wandb.init(
     input_std = pd.Series(checkpoint["input_std"])
     target_mean = checkpoint["target_mean"]
     target_std = checkpoint["target_std"]
-    model_dim = checkpoint("model_dim")
-    num_heads = checkpoint("num_heads")
-    num_layers = checkpoint("num_layers")
-    dropout_prob = checkpoint("dropout_prob")
-    src_len = checkpoint("src_len")
-    tgt_len = checkpoint("tgt_len")
-    batch_size = checkpoint("batch_size")
+    model_dim = checkpoint["model_dim"]
+    num_heads = checkpoint["num_heads"]
+    num_layers = checkpoint["num_layers"]
+    dropout_prob = checkpoint["dropout_prob"]
+    src_len = checkpoint["src_len"]
+    tgt_len = checkpoint["tgt_len"]
+    batch_size = checkpoint["batch_size"]
 
     input_columns = ["temp", "humidity", "pressure", "active_power"]
     target_column = "active_power"
