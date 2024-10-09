@@ -174,8 +174,9 @@ def open_github_issue(issue_title, issue_body, labels=None):
     url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/issues"
 
     headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json",
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
     }
 
     data = {"title": issue_title, "body": issue_body, "labels": labels}
@@ -183,10 +184,9 @@ def open_github_issue(issue_title, issue_body, labels=None):
     response = requests.post(url, headers=headers, json=data)
     if response.status_code == 201:
         issue_url = response.json()["html_url"]
-        print(f"GitHub issue created: {issue_url}")
         return issue_url
     else:
-        print(f"Failed to create GitHub issue: {response.content}")
+        raise RuntimeError(f"Failed to create GitHub issue: {response.content}")
     return None
 
 
@@ -208,7 +208,7 @@ def get_github_repo_info():
             pattern = r"git@github.com:(.+)/(.+)\.git"
         elif remote_url.startswith("https://"):
             # HTTPS URL
-            pattern = r"https://github.com/(.+)/(.+)\.git"
+            pattern = r"https://github.com/(.+)/(.+)"
         else:
             # Other formats
             return None, None

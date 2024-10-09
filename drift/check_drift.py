@@ -73,25 +73,24 @@ with wandb.init(
         artifact = run.log_artifact(artifact).wait()
         # Open a github issue asking for manual review
         issue_title = f"Data drift detected on {train_artifact.source_name}"
-        drifted_features = ", ".join(
-            [feature for feature, drift in drift_results.items() if drift]
-        )
         issue_body = (
-            f"Drift has been detected in the following features: {drifted_features}.\n\n"
-            f"Please review the [logged artifact](https://wandb.ai//{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.source_name}) "
-            f"and the [drift report]({report_url}) to determine if the training data should be updated.\n\n"
-            f"If approved, link the [logged artifact](https://wandb.ai//{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.source_name}) "
-            f"to the training Registry (`jdoc-org/wandb-registry-dataset/training`), otherwise, close this issue."
+            f"Data drift has been detected when comparing the registered training dataset with recent production data.\n\n"
+            f"Please review the [candidate artifact](https://wandb.ai/{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.source_name}) "
+            f"and the [drift report]({report_url}) to determine if the registered training data should be updated.\n\n"
+            f"To approve the new candidate after review, link it to [the training Dataset Registry](https://wandb.ai/registry/dataset?selectionPath=jdoc-org%2Fwandb-registry-dataset%2Ftraining&view=versions) at "
+            f"(`jdoc-org/wandb-registry-dataset/training`), otherwise close this issue."
         )
         issue_url = open_github_issue(issue_title, issue_body, labels=["drift", "data"])
         print(
-            f"Production batch `{prod_artifact.source_name}` was logged "
-            f"as candidate training data `{artifact.source_name}`. "
-            f"An [issue]({issue_url}) was created for manual review. "
+            f"Production batch `{prod_artifact.source_name}` has been logged "
+            f"as candidate to replace training data `{artifact.source_name}`. "
+            f"An [issue]({issue_url}) was created for manual review:\n"
         )
+        print(f"- [Data Drift Issue]({issue_url})")
     else:
         print("> No drift detected.\n")
 
+    print(f"- [W&B Run]({run.url})")
     print(f"- [Full data drift report]({report_url})")
 
     # Optionally the drift detection result in a parseable format.
