@@ -8,7 +8,7 @@ import torch.nn as nn
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from transformer_model import TimeSeriesTransformer  # Ensure this is accessible
 from utils import plot_predictions_vs_actuals
-import sys
+import os
 
 # Initialize a W&B run
 with wandb.init(
