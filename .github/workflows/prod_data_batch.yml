@@ -18,10 +18,6 @@ jobs:
       - name: ⏬ Checkout repository
         uses: actions/checkout@v4
 
-      - name: 📦 Grab dependencies
-        run: |
-          cp transformer_model.py eval/
-
       - name: 🐍 Setup python
         uses: actions/setup-python@v5
         with:

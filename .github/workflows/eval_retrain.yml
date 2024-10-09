@@ -19,6 +19,10 @@ jobs:
       - name: ⏬ Checkout repository
         uses: actions/checkout@v4
 
+      - name: 📦 Grab dependencies
+        run: |
+          cp transformer_model.py eval/
+
       - name: ⚙️ Run Evaluation
         env:
           WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
