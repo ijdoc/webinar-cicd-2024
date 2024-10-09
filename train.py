@@ -1,166 +1,162 @@
-# train.py
+# train.property
 
 import torch
-import torch.nn as nn
 import torch.optim as optim
-from transformer_model import TimeSeriesTransformer
+import torch.nn.functional as F
+from torch.utils.data import DataLoader, TensorDataset
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import pandas as pd
+from simple_model import load_model
+from utils import prep_time_series_data
 import wandb
-import os
-import numpy as np
 
-with wandb.init(
+config = {
+    "input_size": 4,
+    "hidden_size": 28,
+    "output_size": 1,
+    "num_epochs": 10000,
+    "batch_size": 64,
+    "learning_rate": 0.000003,
+    "validation_split": 0.2,
+    "n_time_steps": 24,
+}
+
+wandb.init(
     project="wandb-webinar-cicd-2024",
     job_type="train",
-    config={
-        "model_dim": 64,  # Transformer model dimension
-        "num_heads": 8,  # Number of attention heads
-        "num_layers": 3,  # Number of encoder layers
-        "dropout_prob": 0.1,  # Dropout probability
-        "learning_rate": 0.00005,  # Learning rate
-        "epochs": 100,  # Number of training epochs
-        "src_len": 30,  # Number of past time steps to use (history)
-        "tgt_len": 7,  # Number of future time steps to predict
-        "batch_size": 32,  # Batch size
-    },
-) as run:
+    config=config,
+)
 
-    # Hyperparameters
-    model_dim = run.config.model_dim
-    num_heads = run.config.num_heads
-    num_layers = run.config.num_layers
-    dropout_prob = run.config.dropout_prob
-    learning_rate = run.config.learning_rate
-    epochs = run.config.epochs
-    src_len = run.config.src_len
-    tgt_len = run.config.tgt_len
-    batch_size = run.config.batch_size
+artifact = wandb.use_artifact("jdoc-org/wandb-registry-dataset/training:latest")
+df = artifact.get("training_data").get_dataframe()
 
-    # Grab the training dataset from the registry
-    artifact = run.use_artifact("jdoc-org/wandb-registry-dataset/training:latest")
-    run.config["train_data"] = artifact.source_name
-    data = artifact.get("training_data").get_dataframe()
-    input_columns = ["temp", "humidity", "pressure", "active_power"]
-    target_column = "active_power"
-    input_dim = len(input_columns)
-    num_days = data.shape[0]  # Total number of days
-    print(f"Number of days: {num_days}")
+# Prepare data (assumes the first column is the target value)
+X = df.iloc[:, :].values  # All columns as input
+y = df.iloc[:, 0].values.reshape(-1, 1)  # First column as target
 
-    # **Normalization Step**
+# Normalize the data using StandardScaler
+scaler_X = StandardScaler()
+scaler_y = StandardScaler()
 
-    # Compute mean and std for input features and target variable
-    input_mean = data[input_columns].mean()
-    input_std = data[input_columns].std()
+X_scaled = scaler_X.fit_transform(X)
+y_scaled = scaler_y.fit_transform(y)
 
-    target_mean = data[target_column].mean()
-    target_std = data[target_column].std()
+# Create time series data using n_time_steps
+n_time_steps = config["n_time_steps"]
+X_time_series, y_time_series = prep_time_series_data(X_scaled, y_scaled, n_time_steps)
 
-    # Normalize input features
-    data[input_columns] = (data[input_columns] - input_mean) / input_std
+# Convert time series data to tensors
+X_tensor = torch.tensor(X_time_series, dtype=torch.float32)
+y_tensor = torch.tensor(y_time_series, dtype=torch.float32)
 
-    # Normalize target variable
-    data[target_column] = (data[target_column] - target_mean) / target_std
+# Split data into training and validation sets
+X_train, X_val, y_train, y_val = train_test_split(
+    X_tensor, y_tensor, test_size=config["validation_split"], random_state=42
+)
 
-    # Instantiate the model with separate input dimensions
-    model = TimeSeriesTransformer(
-        src_input_dim=input_dim,
-        tgt_input_dim=1,
-        d_model=model_dim,
-        nhead=num_heads,
-        num_layers=num_layers,
-        dropout=dropout_prob,
+# Create DataLoaders for mini-batch training and validation
+train_dataset = TensorDataset(X_train, y_train)
+train_loader = DataLoader(train_dataset, batch_size=config["batch_size"], shuffle=True)
+
+val_dataset = TensorDataset(X_val, y_val)
+val_loader = DataLoader(val_dataset, batch_size=config["batch_size"])
+
+# Instantiate the model
+model = load_model(
+    input_size=config["input_size"] * config["n_time_steps"],
+    hidden_size=config["hidden_size"],
+    output_size=config["output_size"],
+)
+
+# Loss and optimizer
+criterion = torch.nn.MSELoss()
+optimizer = optim.Adam(model.parameters(), lr=config["learning_rate"])
+
+# Training loop with mini-batch training
+best_val_loss = float("inf")  # Initialize a variable to track the best validation loss
+for epoch in range(config["num_epochs"]):
+    model.train()
+    running_loss = 0.0
+
+    # Loop over mini-batches
+    for batch_X, batch_y in train_loader:
+        optimizer.zero_grad()
+        outputs = model(batch_X)
+        loss = criterion(outputs, batch_y)
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item()
+
+    avg_train_loss = running_loss / len(train_loader)
+
+    # Validation loop
+    model.eval()
+    val_loss = 0.0
+    val_mae_loss = 0.0
+    val_r2_score = 0.0
+    with torch.no_grad():
+        ss_res = 0.0
+        ss_tot = 0.0
+        for batch_X, batch_y in val_loader:
+            val_outputs = model(batch_X)
+            loss = criterion(val_outputs, batch_y)
+            val_loss += loss.item()
+
+            # Calculate MAE
+            val_mae_loss += F.l1_loss(val_outputs, batch_y).item()
+
+            # Calculate R²
+            ss_res += torch.sum((batch_y - val_outputs) ** 2).item()
+            ss_tot += torch.sum((batch_y - torch.mean(batch_y)) ** 2).item()
+
+        avg_val_loss = val_loss / len(
+            val_loader
+        )  # Average validation loss for the epoch
+        avg_val_mae = val_mae_loss / len(val_loader)  # Average validation MAE
+        val_r2_score = 1 - (ss_res / ss_tot)  # Validation R²
+
+    wandb.log(
+        {
+            "train_loss": avg_train_loss,
+            "val_loss": avg_val_loss,
+            "val_mae": avg_val_mae,
+            "val_r2": val_r2_score,
+        }
     )
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    print(f"Training on {device}")
+    # Print metrics every 100 epochs
+    if (epoch + 1) % 100 == 0:
+        print(
+            f'Epoch [{epoch+1}/{config["num_epochs"]}], Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}, Val MAE: {avg_val_mae:.4f}, Val R²: {val_r2_score:.4f}'
+        )
 
-    # Loss function and optimizer
-    criterion = nn.MSELoss()  # Mean Squared Error loss for regression
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    # Save the best model based on validation loss
+    if avg_val_loss < best_val_loss:
+        best_val_loss = avg_val_loss
+        # Update best/summary metrics
+        metrics = {
+            "train_loss": avg_train_loss,
+            "val_loss": avg_train_loss,
+            "val_mae": avg_val_loss,
+            "val_r2": val_r2_score,
+        }
+        torch.save(
+            {
+                "model_state_dict": model.state_dict(),
+                "scaler_X": scaler_X,
+                "scaler_y": scaler_y,
+                "metrics": metrics,
+                "config": config,
+            },
+            "best_model.pth",
+        )
 
-    # Prepare source and target data for training
-    num_samples = num_days - src_len - tgt_len + 1
+    wandb.summary.update(metrics)
 
-    # Assume `data` is your dataset with multiple features
-    input_data = data[input_columns].values  # (num_days, input_dim)
-    target_data = data[target_column].values  # (num_days,)
+    # print(f"Best model saved at epoch {epoch+1}")
 
-    # Prepare source and target tensors without explicit loops
-    # For src_data
-    src_data_np = np.array([input_data[i : i + src_len] for i in range(num_samples)])
-    src_data = torch.from_numpy(
-        src_data_np
-    ).float()  # Shape: (num_samples, src_len, input_dim)
-
-    # For tgt_data
-    tgt_data_np = np.array(
-        [target_data[i + src_len : i + src_len + tgt_len] for i in range(num_samples)]
-    )
-    tgt_data = (
-        torch.from_numpy(tgt_data_np).unsqueeze(-1).float()
-    )  # Shape: (num_samples, tgt_len, 1)
-
-    # Training loop
-    for epoch in range(epochs):
-        model.train()  # Set the model to training mode
-
-        for i in range(0, num_samples, batch_size):
-            # Get batch data
-            src_batch = src_data[i : i + batch_size]  # (batch_size, src_len, input_dim)
-            tgt_batch = tgt_data[i : i + batch_size]  # (batch_size, tgt_len, 1)
-            src_batch = src_batch.to(device)
-            tgt_batch = tgt_batch.to(device)
-
-            # Clear the gradients
-            optimizer.zero_grad()
-
-            # Prepare the target input (shifted by one time step)
-            tgt_input = tgt_batch[
-                :, :-1, :
-            ]  # Remove the last time step from the target
-
-            # Forward pass: predict future power consumption
-            output = model(
-                src_batch, tgt_input
-            )  # Pass the source and the shifted target
-
-            # Compute loss between predicted and actual values
-            loss = criterion(
-                output, tgt_batch[:, 1:, :]
-            )  # Compare with the actual target
-
-            # Backward pass and optimization
-            loss.backward()
-            optimizer.step()
-
-        # Print the loss for this epoch
-        print(f"Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}")
-        wandb.log({"loss": loss.item()})
-
-    # Create a directory to save the model
-    model_dir = "checkpoints"
-    os.makedirs(model_dir, exist_ok=True)
-
-    # Save model state and normalization parameters
-    checkpoint = {
-        "model_state_dict": model.state_dict(),
-        "optimizer_state_dict": optimizer.state_dict(),
-        "input_mean": input_mean.to_dict(),
-        "input_std": input_std.to_dict(),
-        "target_mean": target_mean.item(),
-        "target_std": target_std.item(),
-        "model_dim": model_dim,
-        "num_heads": num_heads,
-        "num_layers": num_layers,
-        "dropout_prob": dropout_prob,
-        "src_len": src_len,
-        "tgt_len": tgt_len,
-        "batch_size": batch_size,
-    }
-
-    checkpoint_path = os.path.join(model_dir, "model_checkpoint.pth")
-    torch.save(checkpoint, checkpoint_path)
-
-    # Create a wandb Artifact
-    artifact = wandb.Artifact("trained_model", type="model")
-    artifact.add_file(checkpoint_path)
-    run.log_artifact(artifact)
+# Save model as W&B artifact
+artifact = wandb.Artifact("trained_model", type="model")
+artifact.add_file("best_model.pth")
+wandb.log_artifact(artifact)
+wandb.finish()
