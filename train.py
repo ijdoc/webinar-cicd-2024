@@ -148,7 +148,15 @@ with wandb.init(
         "input_std": input_std.to_dict(),
         "target_mean": target_mean.item(),
         "target_std": target_std.item(),
+        "model_dim": model_dim,
+        "num_heads": num_heads,
+        "num_layers": num_layers,
+        "dropout_prob": dropout_prob,
+        "src_len": src_len,
+        "tgt_len": tgt_len,
+        "batch_size": batch_size,
     }
+
     checkpoint_path = os.path.join(model_dir, "model_checkpoint.pth")
     torch.save(checkpoint, checkpoint_path)
 

@@ -8,7 +8,7 @@ import torch.nn as nn
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from transformer_model import TimeSeriesTransformer  # Ensure this is accessible
 from utils import plot_predictions_vs_actuals
-import os
+import sys
 
 # Initialize a W&B run
 with wandb.init(
@@ -31,17 +31,13 @@ with wandb.init(
     input_std = pd.Series(checkpoint["input_std"])
     target_mean = checkpoint["target_mean"]
     target_std = checkpoint["target_std"]
-
-    # Model hyperparameters (ensure these match your training script)
-    print(model_artifact.metadata)
-    sys.exit(0)
-    model_dim = run.config.get("model_dim", 64)
-    num_heads = run.config.get("num_heads", 8)
-    num_layers = run.config.get("num_layers", 3)
-    dropout_prob = run.config.get("dropout_prob", 0.1)
-    src_len = run.config.get("src_len", 30)
-    tgt_len = run.config.get("tgt_len", 7)
-    batch_size = run.config.get("batch_size", 32)
+    model_dim = checkpoint("model_dim")
+    num_heads = checkpoint("num_heads")
+    num_layers = checkpoint("num_layers")
+    dropout_prob = checkpoint("dropout_prob")
+    src_len = checkpoint("src_len")
+    tgt_len = checkpoint("tgt_len")
+    batch_size = checkpoint("batch_size")
 
     input_columns = ["temp", "humidity", "pressure", "active_power"]
     target_column = "active_power"
