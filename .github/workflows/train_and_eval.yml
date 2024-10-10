@@ -1,6 +1,6 @@
 # Checks model performance, and retrains
 # if model degradation is detected
-name: Performance Evaluation
+name: Train & Evaluate
 
 on:
   repository_dispatch:  # Allow triggering from a POST request
@@ -9,7 +9,7 @@ on:
     branches: ijdoc/issue9
 
 jobs:
-  train:
+  Train:
     runs-on: self-hosted
     steps:
       - name: ⏬ Checkout repository
@@ -21,7 +21,7 @@ jobs:
         run: |
           python train.py
 
-  eval_check:
+  Evaluate:
     needs: train
     runs-on: self-hosted
     steps:
