@@ -129,7 +129,7 @@ wandb.log({"predictions_vs_actuals": wandb.Image(plt)})
 if prod_metrics["val_r2"] > r2_score:
     print("> Candidate model did not perform as well as the production model\n\n")
 else:
-    print("> [!INFO]")
+    print("> [!IMPORTANT]")
     print("> The candidate model performed better than the production model\n\n")
 
     # Link the rival model to the proction model registry

@@ -70,7 +70,7 @@ with wandb.init(
     report_artifact = run.log_artifact(report_artifact)
 
     if drift_detected:
-        print("> [!WARNING]")
+        print("> [!IMPORTANT]")
         print("> Drift detected.\n")
         # Log prod data as training data
         artifact = wandb.Artifact("training_data", type="dataset")
@@ -80,11 +80,13 @@ with wandb.init(
         # Open a github issue asking for manual review
         issue_title = f"Data drift detected on {train_artifact.name}"
         issue_body = (
-            f"Data drift has been detected when comparing the registered training dataset with recent production data.\n\n"
-            f"Please review the [candidate artifact](https://wandb.ai/{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.name}) "
-            f"and the [drift report]({report_url}) to determine if the registered training data should be updated.\n\n"
-            f"To approve the new candidate after review, link it to [the training Dataset Registry](https://wandb.ai/registry/dataset?selectionPath=jdoc-org%2Fwandb-registry-dataset%2Ftraining&view=versions) at "
-            f"(`{registered_training_dataset}`), otherwise close this issue."
+            f"Data drift has been detected when comparing the registered training dataset "
+            f"with recent production data. Please review the [candidate artifact "
+            f"`{artifact.name}`](https://wandb.ai/{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.name}) "
+            f"(originally logged as {artifact.source_name}) and the [generated drift report]({report_url}) "
+            f"to determine if the registered training data should be updated.\n\n"
+            f"To approve the new candidate after review, link it to the training Dataset Registry"
+            f"`{registered_training_dataset}`. Otherwise close this issue."
         )
         issue_url = open_github_issue(issue_title, issue_body, labels=["drift", "data"])
         print(
