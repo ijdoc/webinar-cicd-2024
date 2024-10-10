@@ -1,0 +1,38 @@
+# Checks model performance, and retrains
+# if model degradation is detected
+name: Performance Evaluation
+
+on:
+  repository_dispatch:  # Allow triggering from a POST request
+    types: ["Train On Promoted Dataset"]
+  push:
+    branches: ijdoc/issue9
+
+jobs:
+  train:
+    runs-on: self-hosted
+    steps:
+      - name: ⏬ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Train!
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+        run: |
+          python train.py
+
+  eval_check:
+    needs: train
+    runs-on: self-hosted
+    steps:
+      - name: ⏬ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Run Evaluation
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+        id: eval_check
+        run: |
+          output=$(python evaluate.py)
+          echo "$output" >> $GITHUB_STEP_SUMMARY
+

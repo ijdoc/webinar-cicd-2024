@@ -14,21 +14,29 @@ wandb.init(
     job_type="evaluate",
 )
 
-# Load the latest model artifact
-registered_production_model = "jdoc-org/wandb-registry-model/production:latest"
-model_artifact = wandb.use_artifact(registered_production_model)
-wandb.config["model"] = model_artifact.name
-model_dir = model_artifact.download()
-model_path = os.path.join(model_dir, "best_model.pth")
+# Load the production model
+prod_model_name = "jdoc-org/wandb-registry-model/production:latest"
+prod_artifact = wandb.use_artifact(prod_model_name)
+wandb.config["prod_model"] = prod_artifact.name
+prod_model_path = os.path.join(prod_artifact.download(), "best_model.pth")
+
+# Load the rival model
+rival_artifact = wandb.use_artifact("trained_model:latest")
+wandb.config["rival_model"] = rival_artifact.name
+rival_model_path = os.path.join(rival_artifact.download(), "best_model.pth")
 
 # Load the checkpoint
-checkpoint = torch.load(model_path, map_location=torch.device("cpu"))
+model_checkpoint = torch.load(prod_model_path, map_location=torch.device("cpu"))
+rival_checkpoint = torch.load(rival_model_path, map_location=torch.device("cpu"))
 
-# Load the saved scalers and metrics
-scaler_X = checkpoint["scaler_X"]
-scaler_y = checkpoint["scaler_y"]
-metrics = checkpoint["metrics"]
-config = checkpoint["config"]
+# Load the metrics for comparisson
+prod_metrics = model_checkpoint["metrics"]
+
+# Load rival scalers and metrics
+scaler_X = rival_checkpoint["scaler_X"]
+scaler_y = rival_checkpoint["scaler_y"]
+config = rival_checkpoint["config"]
+metrics = rival_checkpoint["metrics"]
 
 # Instantiate the model and load its state dictionary
 model = load_model(
@@ -39,9 +47,9 @@ model = load_model(
 model.load_state_dict(checkpoint["model_state_dict"])
 model.eval()  # Set the model to evaluation mode
 
-# Load the test data artifact from W&B
-artifact = wandb.use_artifact("jdoc-org/wandb-registry-dataset/training:latest")
-df_test = artifact.get("training_data").get_dataframe()
+# Load the latest production data artifact from W&B
+artifact = wandb.use_artifact("production_data:latest")
+df_test = artifact.get("production_data").get_dataframe()
 
 # Prepare data (assumes the first column is the target value)
 X_test = df_test.iloc[:, :].values  # Last 3 columns as input
@@ -118,10 +126,19 @@ all_actuals = scaler_y.inverse_transform(np.vstack(all_actuals))
 plt = plot_predictions_vs_actuals(all_actuals, all_predictions)
 wandb.log({"predictions_vs_actuals": wandb.Image(plt)})
 
-# Print metrics to console
-print(f"Test MSE: {mse_loss:.4f}")
-print(f"Test MAE: {mae_loss:.4f}")
-print(f"Test R²: {r2_score:.4f}")
+if prod_metrics["val_r2"] > r2_score:
+    print("> Candidate model did not perform as well as the production model\n\n")
+else:
+    print("> [!INFO]")
+    print("> The candidate model performed better than the production model\n\n")
+
+    # Link the rival model to the proction model registry
+    wandb.link_artifact(rival_artifact, f"jdoc-org/wandb-registry-model/production")
+    print(
+        "The candidate model has been promoted to the [production model registry](https://wandb.ai/registry/model?selectionPath=jdoc-org%2Fwandb-registry-model%2Fproduction&view=versions)!"
+    )
+
+print(f"- [W&B Run]({run.url})")
 
 # Finish W&B run
 wandb.finish()
