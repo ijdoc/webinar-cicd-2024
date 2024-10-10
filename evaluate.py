@@ -44,7 +44,7 @@ model = load_model(
     config["hidden_size"],
     config["output_size"],
 )
-model.load_state_dict(checkpoint["model_state_dict"])
+model.load_state_dict(rival_checkpoint["model_state_dict"])
 model.eval()  # Set the model to evaluation mode
 
 # Load the latest production data artifact from W&B
