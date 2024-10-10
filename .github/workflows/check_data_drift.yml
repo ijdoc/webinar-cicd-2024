@@ -16,8 +16,8 @@ jobs:
     permissions:
       contents: read
       issues: write  # Grant write access to issues
-    outputs:  # Define outputs for downstream jobs
-      drift_detected: ${{ steps.drift_check.outputs.drift_detected }}
+    # outputs:  # Define outputs for downstream jobs
+    #   drift_detected: ${{ steps.drift_check.outputs.drift_detected }}
     steps:
       - name: ⏬ Checkout repository
         uses: actions/checkout@v4

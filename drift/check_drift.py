@@ -10,12 +10,13 @@ with wandb.init(
 ) as run:
 
     # Grab the latest training and production dataframes
-    train_artifact = run.use_artifact("jdoc-org/wandb-registry-dataset/training:latest")
-    run.config["train_data"] = train_artifact.source_name
+    registered_training_dataset = "jdoc-org/wandb-registry-dataset/training:latest"
+    train_artifact = run.use_artifact(registered_training_dataset)
+    run.config["train_data"] = train_artifact.name
     train_data = train_artifact.get("training_data").get_dataframe()
 
     prod_artifact = run.use_artifact("production_data:latest")
-    run.config["prod_data"] = prod_artifact.source_name
+    run.config["prod_data"] = prod_artifact.name
     prod_data = prod_artifact.get("production_data").get_dataframe()
 
     feature_list = ["active_power", "temp", "humidity", "pressure"]
@@ -72,19 +73,19 @@ with wandb.init(
         artifact.description = prod_artifact.description
         artifact = run.log_artifact(artifact).wait()
         # Open a github issue asking for manual review
-        issue_title = f"Data drift detected on {train_artifact.source_name}"
+        issue_title = f"Data drift detected on {train_artifact.name}"
         issue_body = (
             f"Data drift has been detected when comparing the registered training dataset with recent production data.\n\n"
-            f"Please review the [candidate artifact](https://wandb.ai/{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.source_name}) "
+            f"Please review the [candidate artifact](https://wandb.ai/{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.name}) "
             f"and the [drift report]({report_url}) to determine if the registered training data should be updated.\n\n"
             f"To approve the new candidate after review, link it to [the training Dataset Registry](https://wandb.ai/registry/dataset?selectionPath=jdoc-org%2Fwandb-registry-dataset%2Ftraining&view=versions) at "
-            f"(`jdoc-org/wandb-registry-dataset/training`), otherwise close this issue."
+            f"(`{registered_training_dataset}`), otherwise close this issue."
         )
         issue_url = open_github_issue(issue_title, issue_body, labels=["drift", "data"])
         print(
             f"Production batch `{prod_artifact.source_name}` has been logged "
-            f"as candidate to replace training data `{artifact.source_name}`. "
-            f"An [issue]({issue_url}) was created for manual review:\n"
+            f"as candidate `{artifact.name}` to replace training data. "
+            f"An [issue]({issue_url}) was also created for manual review:\n"
         )
         print(f"- [Data Drift Issue]({issue_url})")
     else:
@@ -93,7 +94,7 @@ with wandb.init(
     print(f"- [W&B Run]({run.url})")
     print(f"- [Full data drift report]({report_url})")
 
-    # Optionally the drift detection result in a parseable format.
+    # Optionally print the drift detection result in a parseable format.
     # Helpful if you want to use this result in a CI/CD pipeline
     # to automatically update the data and/or retrain your model.
     # print(f"DRIFT_DETECTED={drift_detected}")
