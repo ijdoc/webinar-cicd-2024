@@ -81,9 +81,9 @@ with wandb.init(
         issue_title = f"Data drift detected on {train_artifact.name}"
         issue_body = (
             f"Data drift has been detected when comparing the registered training dataset "
-            f"with recent production data. Please review the [candidate artifact "
-            f"`{artifact.name}`](https://wandb.ai/{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.name}) "
-            f"(originally logged as {artifact.source_name}) and the [generated drift report]({report_url}) "
+            f"with recent production data. Please review the [generated drift report]({report_url}), and the"
+            f"[candidate artifact](https://wandb.ai/{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.name}) "
+            f"`{artifact.name}` (originally logged as `{prod_artifact.source_name}`), "
             f"to determine if the registered training data should be updated.\n\n"
             f"To approve the new candidate after review, link it to the training Dataset Registry"
             f"`{registered_training_dataset}`. Otherwise close this issue."
@@ -98,8 +98,8 @@ with wandb.init(
     else:
         print("> No drift detected.\n")
 
-    print(f"- [W&B Run]({run.url})")
-    print(f"- [Full data drift report]({report_url})")
+    print(f"- [W&B Drift Check Run]({run.url})")
+    print(f"- [Full Data Drift Report]({report_url})")
 
     # Optionally print the drift detection result in a parseable format.
     # Helpful if you want to use this result in a CI/CD pipeline

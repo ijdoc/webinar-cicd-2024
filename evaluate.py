@@ -138,7 +138,7 @@ else:
         "The candidate model has been promoted to the [production model registry](https://wandb.ai/registry/model?selectionPath=jdoc-org%2Fwandb-registry-model%2Fproduction&view=versions)!"
     )
 
-print(f"- [W&B Run]({wandb.run.url})")
+print(f"- [W&B Evaluation Run]({wandb.run.url})")
 
 # Finish W&B run
 wandb.finish()
