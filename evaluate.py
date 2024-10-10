@@ -113,9 +113,9 @@ r2_score = 1 - (ss_res / ss_tot)
 
 # Log evaluation metrics to W&B
 eval_table = wandb.Table(columns=["Metric", "Production", "Candidate"])
-eval_table.add_data("MSE", metrics["val_loss"], mse_loss)
-eval_table.add_data("MAE", metrics["val_mae"], mae_loss)
-eval_table.add_data("R²", metrics["val_r2"], r2_score)
+eval_table.add_data("MSE", prod_metrics["val_loss"], mse_loss)
+eval_table.add_data("MAE", prod_metrics["val_mae"], mae_loss)
+eval_table.add_data("R²", prod_metrics["val_r2"], r2_score)
 wandb.log({"performance_metrics": eval_table})
 
 # Convert predictions and actuals to numpy arrays for plotting
