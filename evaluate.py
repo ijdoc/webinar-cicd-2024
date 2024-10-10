@@ -112,7 +112,7 @@ mae_loss /= len(test_loader)
 r2_score = 1 - (ss_res / ss_tot)
 
 # Log evaluation metrics to W&B
-eval_table = wandb.Table(columns=["Metric", "Validation", "Evaluation"])
+eval_table = wandb.Table(columns=["Metric", "Production", "Candidate"])
 eval_table.add_data("MSE", metrics["val_loss"], mse_loss)
 eval_table.add_data("MAE", metrics["val_mae"], mae_loss)
 eval_table.add_data("R²", metrics["val_r2"], r2_score)
@@ -133,7 +133,7 @@ else:
     print("> The candidate model performed better than the production model\n\n")
 
     # Link the rival model to the proction model registry
-    wandb.link_artifact(rival_artifact, f"jdoc-org/wandb-registry-model/production")
+    rival_artifact.link("jdoc-org/wandb-registry-model/production")
     print(
         "The candidate model has been promoted to the [production model registry](https://wandb.ai/registry/model?selectionPath=jdoc-org%2Fwandb-registry-model%2Fproduction&view=versions)!"
     )
