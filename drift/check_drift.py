@@ -11,9 +11,14 @@ with wandb.init(
 
     # Grab the latest training and production dataframes
     registered_training_dataset = "jdoc-org/wandb-registry-dataset/training:latest"
-    train_artifact = run.use_artifact(registered_training_dataset)
+    train_artifact = run.use_artifact(registered_training_dataset, type="dataset")
     run.config["train_data"] = train_artifact.name
-    train_data = train_artifact.get("training_data").get_dataframe()
+    try:
+        train_data = train_artifact.get("training_data").get_dataframe()
+    except:
+        # Since the artifact contents likely haven't changed, the name of the
+        # logged table will revert to production_data from training_data
+        train_data = train_artifact.get("production_data").get_dataframe()
 
     prod_artifact = run.use_artifact("production_data:latest")
     run.config["prod_data"] = prod_artifact.name

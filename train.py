@@ -28,8 +28,15 @@ wandb.init(
     config=config,
 )
 
-artifact = wandb.use_artifact("jdoc-org/wandb-registry-dataset/training:latest")
-df = artifact.get("training_data").get_dataframe()
+artifact = wandb.use_artifact(
+    "jdoc-org/wandb-registry-dataset/training:latest", type="dataset"
+)
+try:
+    df = artifact.get("training_data").get_dataframe()
+except:
+    # Since the artifact contents likely haven't changed, the name of the
+    # logged table will revert to production_data from training_data
+    df = artifact.get("production_data").get_dataframe()
 
 # Prepare data (assumes the first column is the target value)
 X = df.iloc[:, :].values  # All columns as input
