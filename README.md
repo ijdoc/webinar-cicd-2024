@@ -1,6 +1,10 @@
 # wandb-webinar-cicd-2024
 Discover how improving your CI/CD pipeline can boost your team’s productivity and ensure that your production models are always your best models.
 
+<p align="center"><a href="http://www.youtube.com/watch?feature=player_embedded&v=Sw4M-b_GQZg
+" target="_blank"><img src="http://img.youtube.com/vi/Sw4M-b_GQZg/0.jpg" 
+alt="IMAGE ALT TEXT HERE" width="480" border="10" /></a></p>
+
 ## Workflow Entry-Point
 
 ### Setup
